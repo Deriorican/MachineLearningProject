@@ -26,6 +26,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor
 from scipy.stats import boxcox as BxCx
+from sklearn.neural_network import MLPRegressor
 
 def open_data(path):
     X1path = pjoin(path, "X1.csv")
@@ -255,6 +256,19 @@ class Process:
                     min_samples_leaf = val
             model = RandomForestRegressor(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth,
                                           min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf)
+            model.fit(np.vstack(self.X_train.to_numpy()), np.ravel(np.vstack(self.Y_train.to_numpy())*1e-6))
+        elif modelType == "mlp":
+            hidden_layer_sizes = np.array([100])
+            activation = "relu"
+            max_iter = 200
+            for arg, val in zip(kwargs, kwargs.values()):
+                if arg == "hidden_layer_sizes":
+                    hidden_layer_sizes= val
+                if arg == "activation":
+                    activation = val
+                if arg == "max_iter":
+                    max_iter = val
+            model = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes, activation=activation, max_iter=max_iter)
             model.fit(np.vstack(self.X_train.to_numpy()), np.ravel(np.vstack(self.Y_train.to_numpy())*1e-6))
         name = name if name else modelType
         self.models[name] = model
