@@ -191,8 +191,9 @@ class Process:
                 self.transforms["minmaxize_" + feature] = scaler
 
 
-    def removeDuplicate(self):
-        df_dupl = self.X_train[self.X_train.duplicated() == True]
+    def removeDuplicate(self, colmns):
+        #df_dupl = self.X_train[self.X_train.duplicated() == True]
+        df_dupl = self.X_train[self.X_train[colmns].duplicated() == True]
         self.X_train = self.X_train.drop(df_dupl.index, axis=0)
         self.Y_train = self.Y_train.drop(df_dupl.index, axis=0)
 
@@ -200,6 +201,18 @@ class Process:
         corr = self.X_train.corrwith(self.Y_train[0])
         self.X_train = self.X_train[self.X_train.columns[np.abs(corr)>=threshold]]
         self.X_test = self.X_test[self.X_test.columns[np.abs(corr)>=threshold]]
+        
+    
+    def MI_selection(self, N, worst=True):
+        MI = mutual_info_regression(self.X_train, np.concatenate(self.Y_train.to_numpy()))
+        sorted_arg = np.flip(np.array(np.argsort(MI)))
+        if worst:
+            self.X_train = self.X_train[self.X_train.keys()[sorted_arg[:-N]]]
+            self.X_test = self.X_test[self.X_test.keys()[sorted_arg[:-N]]]
+        else:
+            self.X_train = self.X_train[self.X_train.keys()[sorted_arg[:N]]]
+            self.X_test = self.X_test[self.X_test.keys()[sorted_arg[:N]]]
+
 
     def removeRedundantFeatures(self, threshold = 0.75):
         cor_matrix = self.X_train.corr().abs()
