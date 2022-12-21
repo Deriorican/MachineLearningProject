@@ -107,7 +107,7 @@ class Process:
             self.preds = {}
 
     def setTrainTest(self, test_size = 1/3, train_index = None, test_index = None, newSeed = True):
-        if train_index and test_index:
+        if train_index is not None and test_index is not None:
             self.X_train, self.X_test = self.X.iloc[train_index].copy(), self.X.iloc[test_index].copy()
             self.Y_train, self.Y_test = self.Y.iloc[train_index].copy(), self.Y.iloc[test_index].copy()
             self.train_index = train_index
@@ -130,6 +130,8 @@ class Process:
         self.X_test.drop(feature, axis=1, inplace=True)
 
         self.transforms["PCA_" + feature] = pca
+
+        #print(f"PCA of {feature} with {N} components explain {np.sum(pca.explained_variance_ratio_) * 100}% of the variance.")
 
     def emb_most_corr(self, *features): 
         for feature in features:
@@ -268,14 +270,14 @@ class Process:
                     activation = val
                 if arg == "max_iter":
                     max_iter = val
-            model = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes, activation=activation, max_iter=max_iter)
+            model = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes, activation=activation, max_iter=max_iter, learning_rate='adaptive', learning_rate_init=1e-2)
             model.fit(np.vstack(self.X_train.to_numpy()), np.ravel(np.vstack(self.Y_train.to_numpy())*1e-6))
         name = name if name else modelType
         self.models[name] = model
 
     def useModel(self, modelType, X = None):
-        if X:
-            return self.models[modelType].predict(X)
+        if X is not None:
+            return self.models[modelType].predict(np.vstack(X.to_numpy()))
         else:
             self.preds[modelType] = self.models[modelType].predict(np.vstack(self.X_test.to_numpy()))
             return self.preds[modelType]
